@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sweet Dedications Shakes</title>
+<style>
+    body {
+        background-color: #ffd6e8;
+        font-family: 'Arial', sans-serif;
+        text-align: center;
+        color: #333;
+    }
+    h1 {
+        margin-top: 20px;
+        font-family: 'Comic Sans MS', cursive, sans-serif;
+    }
+    .product-container {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 30px;
+        margin: 40px 0;
+    }
+    .product {
+        background-color: #fff0f5;
+        padding: 15px;
+        border-radius: 15px;
+        width: 220px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .product img {
+        width: 150px;
+        height: 150px;
+        border-radius: 10px;
+    }
+    .product h3 {
+        margin: 10px 0 5px 0;
+    }
+    .product p {
+        font-size: 18px;
+        margin: 5px 0;
+    }
+    input[type="number"] {
+        width: 60px;
+        padding: 5px;
+        margin-bottom: 10px;
+    }
+    button {
+        background-color: #ffb6c1;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+    button:hover {
+        background-color: #ff69b4;
+        color: white;
+    }
+</style>
+</head>
+<body>
+<h1>Sweet Dedications — Shakes</h1>
+
+<div class="product-container">
+    <div class="product">
+        <img src="shake-strawberry.jpg" alt="Strawberry Shake">
+        <h3>Strawberry Shake</h3>
+        <p>16 oz — PHP 49</p>
+        <p>20 oz — PHP 59</p>
+        <input type="number" id="qty1" min="1" value="1">
+        <button onclick="recordSale('Strawberry Shake 16oz', 49, 'qty1')">Buy 16oz</button>
+        <button onclick="recordSale('Strawberry Shake 20oz', 59, 'qty1')">Buy 20oz</button>
+    </div>
+
+    <div class="product">
+        <img src="shake-chocolate.jpg" alt="Chocolate Shake">
+        <h3>Chocolate Shake</h3>
+        <p>16 oz — PHP 49</p>
+        <p>20 oz — PHP 59</p>
+        <input type="number" id="qty2" min="1" value="1">
+        <button onclick="recordSale('Chocolate Shake 16oz', 49, 'qty2')">Buy 16oz</button>
+        <button onclick="recordSale('Chocolate Shake 20oz', 59, 'qty2')">Buy 20oz</button>
+    </div>
+
+    <div class="product">
+        <img src="shake-buko.jpg" alt="Buko-Pandan Shake">
+        <h3>Buko-Pandan Shake</h3>
+        <p>16 oz — PHP 49</p>
+        <p>20 oz — PHP 59</p>
+        <input type="number" id="qty3" min="1" value="1">
+        <button onclick="recordSale('Buko-Pandan Shake 16oz', 49, 'qty3')">Buy 16oz</button>
+        <button onclick="recordSale('Buko-Pandan Shake 20oz', 59, 'qty3')">Buy 20oz</button>
+    </div>
+
+    <div class="product">
+        <img src="shake-mango.jpg" alt="Mango Shake">
+        <h3>Mango Shake</h3>
+        <p>16 oz — PHP 49</p>
+        <p>20 oz — PHP 59</p>
+        <input type="number" id="qty4" min="1" value="1">
+        <button onclick="recordSale('Mango Shake 16oz', 49, 'qty4')">Buy 16oz</button>
+        <button onclick="recordSale('Mango Shake 20oz', 59, 'qty4')">Buy 20oz</button>
+    </div>
+</div>
+
+<script>
+// same google apps script url you already use
+const GAS_URL = "https://script.google.com/macros/s/AKfycbx1NA28dHZ5HAotVrSYErXDE54V8aQ3J9L7hDHUhqUIjknerEdk9I2nixsM-dTUoOeY/exec";
+
+function recordSale(itemName, price, qtyId) {
+    const quantity = document.getElementById(qtyId).value;
+
+    const data = new URLSearchParams();
+    data.append("itemName", itemName);
+    data.append("price", price);
+    data.append("quantity", quantity);
+
+    fetch(GAS_URL, {
+        method: "POST",
+        body: data
+    })
+    .then(res => res.json())
+    .then(res => {
+        if (res.status === "success") {
+            alert(`✅ Sale recorded!\n🥤 Item: ${itemName}\n📦 Quantity: ${quantity}\n💵 Total: PHP ${price * quantity}`);
+        } else {
+            alert("⚠️ Error: " + res.message);
+        }
+    })
+    .catch(err => {
+        alert("❌ Request failed: " + err);
+    });
+}
+</script>
+
+</body>
+</html>
