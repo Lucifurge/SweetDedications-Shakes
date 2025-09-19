@@ -106,7 +106,7 @@
 </div>
 
 <script>
-// same google apps script url you already use
+// Google Apps Script Web App URL (your deployed URL)
 const GAS_URL = "https://script.google.com/macros/s/AKfycbzQBtMXYN2sNvTG5iUcdXw9kuwDAXe40Gb_KhEfXdp-Cn-ejjsQzS7ATjty0LhAfxRS/exec";
 
 function recordSale(itemName, price, qtyId) {
@@ -119,18 +119,21 @@ function recordSale(itemName, price, qtyId) {
 
     fetch(GAS_URL, {
         method: "POST",
-        body: data
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: data.toString()
     })
     .then(res => res.json())
     .then(res => {
         if (res.status === "success") {
-            alert(`✅ Sale recorded!\n🥤 Item: ${itemName}\n📦 Quantity: ${quantity}\n💵 Total: PHP ${price * quantity}`);
+            alert(`✅ Sale recorded!\nItem: ${itemName}\nQuantity: ${quantity}\nTotal: PHP ${price * quantity}`);
         } else {
-            alert("⚠️ Error: " + res.message);
+            alert("Error: " + res.message);
         }
     })
     .catch(err => {
-        alert("❌ Request failed: " + err);
+        alert("Request failed: " + err);
     });
 }
 </script>
