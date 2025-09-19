@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cashier Dashboard</title>
+  <style>
+    body {
+      background: #fffafc;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      color: #ff69b4;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+    th {
+      background-color: #ffd6e8;
+    }
+    tfoot td {
+      font-weight: bold;
+      background-color: #fff0f5;
+    }
+  </style>
+</head>
+<body>
+  <h1>Cashier Orders (Live from Spreadsheet)</h1>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th>Quantity</th>
+        <th>Price (PHP)</th>
+        <th>Total (PHP)</th>
+      </tr>
+    </thead>
+    <tbody id="orderBody"></tbody>
+    <tfoot>
+      <tr>
+        <td colspan="3">Grand Total</td>
+        <td id="grandTotal">0</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <script>
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbx1NA28dHZ5HAotVrSYErXDE54V8aQ3J9L7hDHUhqUIjknerEdk9I2nixsM-dTUoOeY/exec";
+
+    async function fetchOrders() {
+      try {
+        const res = await fetch(GAS_URL);
+        const data = await res.json();
+
+        const tbody = document.getElementById("orderBody");
+        tbody.innerHTML = "";
+        let grandTotal = 0;
+
+        data.forEach(row => {
+          const qty = parseInt(row.quantity) || 0;
+          const prc = parseFloat(row.price) || 0;
+          const total = qty * prc;
+          grandTotal += total;
+
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${row.product}</td>
+            <td>${qty}</td>
+            <td>${prc}</td>
+            <td>${total}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        document.getElementById("grandTotal").textContent = grandTotal;
+      } catch (err) {
+        console.error("Error fetching data:", err);
+      }
+    }
+
+    // Load data on page load
+    fetchOrders();
+
+    // Refresh every 5 seconds
+    setInterval(fetchOrders, 5000);
+  </script>
+</body>
+</html>
