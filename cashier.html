@@ -3,69 +3,56 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cashier Dashboard</title>
+  <title>Kitchen Display</title>
   <style>
     body {
-      background: #fffafc;
+      margin: 0;
       font-family: Arial, sans-serif;
-      padding: 20px;
+      background: #fffafc;
       color: #333;
+      display: flex;
+      height: 100vh;
     }
     h1 {
       text-align: center;
       color: #ff69b4;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
+    .container {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
     }
-    th, td {
-      padding: 10px;
-      border: 1px solid #ddd;
+    .processing {
+      background-color: #f0ad4e;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 8px;
+      color: white;
+      font-size: 18px;
       text-align: center;
-    }
-    th {
-      background-color: #ffd6e8;
-    }
-    tfoot td {
       font-weight: bold;
-      background-color: #fff0f5;
     }
-    button {
-      padding: 5px 10px;
-      margin: 2px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
+    .ready {
+      background-color: #5cb85c;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 8px;
+      color: white;
+      font-size: 18px;
+      text-align: center;
+      font-weight: bold;
     }
-    .processing { background-color: #f0ad4e; color: #fff; }
-    .done { background-color: #5cb85c; color: #fff; }
   </style>
 </head>
 <body>
-  <h1>Cashier Orders (Live from Spreadsheet)</h1>
-
-  <table>
-    <thead>
-      <tr>
-        <th>Order #</th>
-        <th>Item</th>
-        <th>Quantity</th>
-        <th>Price (PHP)</th>
-        <th>Total (PHP)</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody id="orderBody"></tbody>
-    <tfoot>
-      <tr>
-        <td colspan="4">Grand Total</td>
-        <td id="grandTotal">0</td>
-        <td></td>
-      </tr>
-    </tfoot>
-  </table>
+  <div class="container">
+    <h1>Processing Orders</h1>
+    <div id="processingList"></div>
+  </div>
+  <div class="container">
+    <h1>Ready for Pickup</h1>
+    <div id="readyList"></div>
+  </div>
 
   <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxr7D9JPmYbagwFLa3cLfNyTCMMFvdvF0wWVEmxq0GdUhuxB2PAqld9_jxSaFCkfOo/exec";
@@ -75,52 +62,32 @@
         const res = await fetch(GAS_URL);
         const data = await res.json();
 
-        const tbody = document.getElementById("orderBody");
-        tbody.innerHTML = "";
-        let grandTotal = 0;
+        const processingDiv = document.getElementById("processingList");
+        const readyDiv = document.getElementById("readyList");
+        processingDiv.innerHTML = "";
+        readyDiv.innerHTML = "";
 
         data.forEach((row, index) => {
-          const qty = parseInt(row.quantity) || 0;
-          const prc = parseFloat(row.price) || 0;
-          const total = qty * prc;
-          grandTotal += total;
+          const orderId = row.orderNumber || index + 1;
+          const el = document.createElement("div");
 
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${row.orderNumber || index + 1}</td>
-            <td>${row.product}</td>
-            <td>${qty}</td>
-            <td>${prc}</td>
-            <td>${total}</td>
-            <td>
-              <button class="processing" onclick="updateStatus('${row.orderNumber || index+1}','Processing')">Processing</button>
-              <button class="done" onclick="updateStatus('${row.orderNumber || index+1}','Done')">Done</button>
-            </td>
-          `;
-          tbody.appendChild(tr);
+          if (row.status === "Processing") {
+            el.className = "processing";
+            el.textContent = `Order #${orderId} - ${row.product} x ${row.quantity}`;
+            processingDiv.appendChild(el);
+          } else if (row.status === "Done") {
+            el.className = "ready";
+            el.textContent = `Order #${orderId} - ${row.product} x ${row.quantity}`;
+            readyDiv.appendChild(el);
+          }
         });
-
-        document.getElementById("grandTotal").textContent = grandTotal;
       } catch (err) {
-        console.error("Error fetching data:", err);
-      }
-    }
-
-    async function updateStatus(orderNumber, status) {
-      try {
-        await fetch(GAS_URL, {
-          method: "POST",
-          body: JSON.stringify({ orderNumber, status }),
-          headers: { "Content-Type": "application/json" }
-        });
-        fetchOrders(); // refresh after update
-      } catch (err) {
-        console.error("Error updating status:", err);
+        console.error("Error fetching orders:", err);
       }
     }
 
     fetchOrders();
-    setInterval(fetchOrders, 5000);
+    setInterval(fetchOrders, 5000); // auto refresh
   </script>
 </body>
 </html>
