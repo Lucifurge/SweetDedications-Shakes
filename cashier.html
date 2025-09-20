@@ -32,6 +32,15 @@
       font-weight: bold;
       background-color: #fff0f5;
     }
+    button {
+      padding: 5px 10px;
+      margin: 2px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .processing { background-color: #f0ad4e; color: #fff; }
+    .done { background-color: #5cb85c; color: #fff; }
   </style>
 </head>
 <body>
@@ -40,17 +49,20 @@
   <table>
     <thead>
       <tr>
+        <th>Order #</th>
         <th>Item</th>
         <th>Quantity</th>
         <th>Price (PHP)</th>
         <th>Total (PHP)</th>
+        <th>Status</th>
       </tr>
     </thead>
     <tbody id="orderBody"></tbody>
     <tfoot>
       <tr>
-        <td colspan="3">Grand Total</td>
+        <td colspan="4">Grand Total</td>
         <td id="grandTotal">0</td>
+        <td></td>
       </tr>
     </tfoot>
   </table>
@@ -67,7 +79,7 @@
         tbody.innerHTML = "";
         let grandTotal = 0;
 
-        data.forEach(row => {
+        data.forEach((row, index) => {
           const qty = parseInt(row.quantity) || 0;
           const prc = parseFloat(row.price) || 0;
           const total = qty * prc;
@@ -75,10 +87,15 @@
 
           const tr = document.createElement("tr");
           tr.innerHTML = `
+            <td>${row.orderNumber || index + 1}</td>
             <td>${row.product}</td>
             <td>${qty}</td>
             <td>${prc}</td>
             <td>${total}</td>
+            <td>
+              <button class="processing" onclick="updateStatus('${row.orderNumber || index+1}','Processing')">Processing</button>
+              <button class="done" onclick="updateStatus('${row.orderNumber || index+1}','Done')">Done</button>
+            </td>
           `;
           tbody.appendChild(tr);
         });
@@ -89,10 +106,20 @@
       }
     }
 
-    // Load data on page load
-    fetchOrders();
+    async function updateStatus(orderNumber, status) {
+      try {
+        await fetch(GAS_URL, {
+          method: "POST",
+          body: JSON.stringify({ orderNumber, status }),
+          headers: { "Content-Type": "application/json" }
+        });
+        fetchOrders(); // refresh after update
+      } catch (err) {
+        console.error("Error updating status:", err);
+      }
+    }
 
-    // Refresh every 5 seconds
+    fetchOrders();
     setInterval(fetchOrders, 5000);
   </script>
 </body>
