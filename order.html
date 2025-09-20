@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Status Display</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #fffafc;
+      display: flex;
+      height: 100vh;
+    }
+    h1 {
+      text-align: center;
+      margin: 10px 0;
+      color: #ff69b4;
+    }
+    .column {
+      flex: 1;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .processing {
+      background: #ffe6b3;
+      border-right: 2px solid #ddd;
+    }
+    .done {
+      background: #d6ffd6;
+    }
+    .order-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .order-card {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="column processing">
+    <h1>Processing Orders</h1>
+    <div id="processingList" class="order-list"></div>
+  </div>
+  <div class="column done">
+    <h1>Ready for Pickup</h1>
+    <div id="doneList" class="order-list"></div>
+  </div>
+
+  <script>
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxr7D9JPmYbagwFLa3cLfNyTCMMFvdvF0wWVEmxq0GdUhuxB2PAqld9_jxSaFCkfOo/exec";
+
+    async function fetchOrders() {
+      try {
+        const res = await fetch(GAS_URL);
+        const data = await res.json();
+
+        const processingList = document.getElementById("processingList");
+        const doneList = document.getElementById("doneList");
+        processingList.innerHTML = "";
+        doneList.innerHTML = "";
+
+        data.forEach((row, index) => {
+          const orderNumber = row.orderNumber || (index + 1);
+          const status = row.status || "Processing";
+
+          const card = document.createElement("div");
+          card.className = "order-card";
+          card.textContent = `#${orderNumber}`;
+
+          if (status === "Processing") {
+            processingList.appendChild(card);
+          } else if (status === "Done") {
+            doneList.appendChild(card);
+          }
+        });
+      } catch (err) {
+        console.error("Error fetching data:", err);
+      }
+    }
+
+    fetchOrders();
+    setInterval(fetchOrders, 5000); // refresh every 5 sec
+  </script>
+</body>
+</html>
