@@ -70,12 +70,13 @@
         doneList.innerHTML = "";
 
         data.forEach((row, index) => {
-          const orderNumber = row.orderNumber || (index + 1);
-          const status = row.status || "Processing";
+          const orderNumber = row.orderNumber || (index + 1); 
+          const status = row.status || "Processing"; // ✅ read status from sheet
 
           const card = document.createElement("div");
           card.className = "order-card";
-          card.textContent = `#${orderNumber}`;
+          // ✅ Display item + qty too
+          card.textContent = `#${orderNumber} - ${row.product} (${row.quantity})`;
 
           if (status === "Processing") {
             processingList.appendChild(card);
