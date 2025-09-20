@@ -1,60 +1,86 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kitchen Display</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cashier Dashboard</title>
   <style>
     body {
-      margin: 0;
-      font-family: Arial, sans-serif;
       background: #fffafc;
+      font-family: Arial, sans-serif;
+      padding: 20px;
       color: #333;
-      display: flex;
-      height: 100vh;
     }
     h1 {
       text-align: center;
       color: #ff69b4;
     }
-    .container {
-      flex: 1;
-      padding: 20px;
-      overflow-y: auto;
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
     }
-    .processing {
-      background-color: #f0ad4e;
-      padding: 15px;
-      margin: 10px 0;
-      border-radius: 8px;
-      color: white;
-      font-size: 18px;
+    th, td {
+      padding: 10px;
+      border: 1px solid #ddd;
       text-align: center;
-      font-weight: bold;
     }
-    .ready {
-      background-color: #5cb85c;
-      padding: 15px;
-      margin: 10px 0;
-      border-radius: 8px;
-      color: white;
-      font-size: 18px;
-      text-align: center;
-      font-weight: bold;
+    th {
+      background-color: #ffd6e8;
     }
+    tfoot td {
+      font-weight: bold;
+      background-color: #fff0f5;
+    }
+    button {
+      padding: 6px 10px;
+      margin: 2px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .processing { background-color: #f0ad4e; color: #fff; }
+    .done { background-color: #5cb85c; color: #fff; }
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-weight: bold;
+      font-size: 0.9rem;
+      margin-bottom: 6px;
+    }
+    .badge.processing { background:#f0ad4e; color:#fff; }
+    .badge.done { background:#5cb85c; color:#fff; }
+    .badge.none { background:#e0e0e0; color:#333; }
+    .status-actions { margin-top:6px; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Processing Orders</h1>
-    <div id="processingList"></div>
-  </div>
-  <div class="container">
-    <h1>Ready for Pickup</h1>
-    <div id="readyList"></div>
-  </div>
+  <h1>Cashier Orders (Live from Spreadsheet)</h1>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Order #</th>
+        <th>Item</th>
+        <th>Quantity</th>
+        <th>Price (PHP)</th>
+        <th>Total (PHP)</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="orderBody"></tbody>
+    <tfoot>
+      <tr>
+        <td colspan="4">Grand Total</td>
+        <td id="grandTotal">0</td>
+        <td></td>
+      </tr>
+    </tfoot>
+  </table>
 
   <script>
+    // <-- Replace with your Apps Script URL if it changes -->
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxr7D9JPmYbagwFLa3cLfNyTCMMFvdvF0wWVEmxq0GdUhuxB2PAqld9_jxSaFCkfOo/exec";
 
     async function fetchOrders() {
@@ -62,32 +88,98 @@
         const res = await fetch(GAS_URL);
         const data = await res.json();
 
-        const processingDiv = document.getElementById("processingList");
-        const readyDiv = document.getElementById("readyList");
-        processingDiv.innerHTML = "";
-        readyDiv.innerHTML = "";
+        const tbody = document.getElementById("orderBody");
+        tbody.innerHTML = "";
+        let grandTotal = 0;
 
         data.forEach((row, index) => {
-          const orderId = row.orderNumber || index + 1;
-          const el = document.createElement("div");
+          // tolerant field names (product/item/Product)
+          const product = row.product || row.item || row.Product || "";
+          const qty = parseInt(row.quantity || row.qty || row.Quantity || 0) || 0;
+          const prc = parseFloat(row.price || row.Price || 0) || 0;
+          const total = qty * prc;
+          grandTotal += total;
 
-          if (row.status === "Processing") {
-            el.className = "processing";
-            el.textContent = `Order #${orderId} - ${row.product} x ${row.quantity}`;
-            processingDiv.appendChild(el);
-          } else if (row.status === "Done") {
-            el.className = "ready";
-            el.textContent = `Order #${orderId} - ${row.product} x ${row.quantity}`;
-            readyDiv.appendChild(el);
-          }
+          // order identifier (try multiple field names, fallback to index+1)
+          const orderNumber = row.orderNumber || row.orderId || row.id || (index + 1);
+          const statusRaw = (row.status || row.Status || "").toString().trim();
+          const status = statusRaw ? statusRaw : "Processing";
+
+          // create row
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td class="cell-order">${orderNumber}</td>
+            <td class="cell-product">${escapeHtml(product)}</td>
+            <td class="cell-qty">${qty}</td>
+            <td class="cell-price">${isNaN(prc) ? "" : prc}</td>
+            <td class="cell-total">${isNaN(total) ? "" : total}</td>
+            <td class="cell-status">
+              <div class="status-badge-wrap">
+                <span class="badge ${status.toLowerCase()==='done' ? 'done' : (status.toLowerCase()==='processing' ? 'processing' : 'none')}">${status}</span>
+              </div>
+              <div class="status-actions">
+                <button class="processing btn-process">Processing</button>
+                <button class="done btn-done">Done</button>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(tr);
+
+          // attach handlers (capture values safely)
+          const btnProcess = tr.querySelector('.btn-process');
+          const btnDone = tr.querySelector('.btn-done');
+
+          btnProcess.addEventListener('click', () => updateStatus({ orderNumber, index, status: 'Processing', product, qty, prc }));
+          btnDone.addEventListener('click', () => updateStatus({ orderNumber, index, status: 'Done', product, qty, prc }));
         });
+
+        document.getElementById("grandTotal").textContent = formatNumber(grandTotal);
       } catch (err) {
-        console.error("Error fetching orders:", err);
+        console.error("Error fetching data:", err);
       }
     }
 
+    // helper: send status update to GAS (includes orderNumber and row index)
+    async function updateStatus({ orderNumber, index, status }) {
+      try {
+        // disable UI for a short moment (optimistic)
+        // send both orderNumber and index so Apps Script can match either field
+        const body = { orderNumber, rowIndex: index, status };
+
+        // POST JSON to Apps Script
+        const res = await fetch(GAS_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+
+        // optional: check response
+        if (!res.ok) {
+          console.error("Failed to update status", res.status, await res.text());
+        }
+
+        // refresh view
+        fetchOrders();
+      } catch (err) {
+        console.error("Error updating status:", err);
+      }
+    }
+
+    // small helpers
+    function formatNumber(n) { return Number.isFinite(n) ? (Math.round(n * 100) / 100) : n; }
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    // initial load + polling
     fetchOrders();
-    setInterval(fetchOrders, 5000); // auto refresh
+    setInterval(fetchOrders, 5000);
   </script>
 </body>
 </html>
