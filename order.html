@@ -21,6 +21,7 @@
       flex: 1;
       padding: 20px;
       box-sizing: border-box;
+      overflow-y: auto;
     }
     .processing {
       background: #ffe6b3;
@@ -64,23 +65,31 @@
         const res = await fetch(GAS_URL);
         const data = await res.json();
 
+        // ✅ Normalize data (same as cashier.html)
+        const rows = data.map((r, index) => ({
+          timestamp: r[0] || r.timestamp || "",
+          product: r[1] || r.product || "",
+          quantity: r[2] || r.quantity || 0,
+          price: r[3] || r.price || 0,
+          total: r[4] || r.total || 0,
+          orderNumber: r.orderNumber || r[5] || (index + 1),
+          status: r.status || r[6] || "Processing"
+        }));
+
         const processingList = document.getElementById("processingList");
         const doneList = document.getElementById("doneList");
         processingList.innerHTML = "";
         doneList.innerHTML = "";
 
-        data.forEach((row, index) => {
-          const orderNumber = row.orderNumber || (index + 1); 
-          const status = row.status || "Processing"; // ✅ read status from sheet
-
+        rows.forEach(row => {
+          const status = (row.status || "Processing").toString().trim();
           const card = document.createElement("div");
           card.className = "order-card";
-          // ✅ Display item + qty too
-          card.textContent = `#${orderNumber} - ${row.product} (${row.quantity})`;
+          card.textContent = `#${row.orderNumber} - ${row.product} (${row.quantity})`;
 
-          if (status === "Processing") {
+          if (status.toLowerCase() === "processing") {
             processingList.appendChild(card);
-          } else if (status === "Done") {
+          } else if (status.toLowerCase() === "done") {
             doneList.appendChild(card);
           }
         });
