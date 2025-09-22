@@ -80,7 +80,6 @@
   </table>
 
   <script>
-    // <-- Replace with your Apps Script URL if it changes -->
     const GAS_URL = "https://script.google.com/macros/s/AKfycbyyAgw1J6xRV2UWmehJhWIC_2XAib_Mpoe594evDq8zhaE_15_kb9TIhoXlj7G9IUkc/exec";
 
     async function fetchOrders() {
@@ -88,23 +87,12 @@
         const res = await fetch(GAS_URL);
         const data = await res.json();
 
-        // ✅ Normalize data rows
-        const rows = data.map(r => ({
-          timestamp: r[0] || r.timestamp || "",
-          product: r[1] || r.product || "",
-          quantity: r[2] || r.quantity || 0,
-          price: r[3] || r.price || 0,
-          total: r[4] || r.total || 0,
-          orderNumber: r.orderNumber || r[5] || "",
-          status: r.status || r[6] || "Processing"
-        })); // UPDATED
-
         const tbody = document.getElementById("orderBody");
         tbody.innerHTML = "";
         let grandTotal = 0;
 
-        rows.forEach((row, index) => {
-          const product = row.product;
+        data.forEach((row, index) => {
+          const product = row.product || "";
           const qty = parseInt(row.quantity) || 0;
           const prc = parseFloat(row.price) || 0;
           const total = qty * prc;
@@ -137,8 +125,8 @@
           const btnProcess = tr.querySelector('.btn-process');
           const btnDone = tr.querySelector('.btn-done');
 
-          btnProcess.addEventListener('click', () => updateStatus({ orderNumber, index, status: 'Processing', product, qty, prc }));
-          btnDone.addEventListener('click', () => updateStatus({ orderNumber, index, status: 'Done', product, qty, prc }));
+          btnProcess.addEventListener('click', () => updateStatus(orderNumber, index, 'Processing'));
+          btnDone.addEventListener('click', () => updateStatus(orderNumber, index, 'Done'));
         });
 
         document.getElementById("grandTotal").textContent = formatNumber(grandTotal);
@@ -147,9 +135,15 @@
       }
     }
 
-    async function updateStatus({ orderNumber, index, status }) {
+    async function updateStatus(orderNumber, index, status) {
       try {
-        const body = { orderNumber, rowIndex: index, status };
+        const body = {
+          action: "updateStatus",
+          orderNumber: orderNumber,
+          rowIndex: index,
+          status: status
+        };
+
         const res = await fetch(GAS_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
