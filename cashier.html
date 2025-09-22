@@ -88,24 +88,32 @@
         const res = await fetch(GAS_URL);
         const data = await res.json();
 
+        // ✅ Normalize data rows
+        const rows = data.map(r => ({
+          timestamp: r[0] || r.timestamp || "",
+          product: r[1] || r.product || "",
+          quantity: r[2] || r.quantity || 0,
+          price: r[3] || r.price || 0,
+          total: r[4] || r.total || 0,
+          orderNumber: r.orderNumber || r[5] || "",
+          status: r.status || r[6] || "Processing"
+        })); // UPDATED
+
         const tbody = document.getElementById("orderBody");
         tbody.innerHTML = "";
         let grandTotal = 0;
 
-        data.forEach((row, index) => {
-          // tolerant field names (product/item/Product)
-          const product = row.product || row.item || row.Product || "";
-          const qty = parseInt(row.quantity || row.qty || row.Quantity || 0) || 0;
-          const prc = parseFloat(row.price || row.Price || 0) || 0;
+        rows.forEach((row, index) => {
+          const product = row.product;
+          const qty = parseInt(row.quantity) || 0;
+          const prc = parseFloat(row.price) || 0;
           const total = qty * prc;
           grandTotal += total;
 
-          // order identifier (try multiple field names, fallback to index+1)
-          const orderNumber = row.orderNumber || row.orderId || row.id || (index + 1);
-          const statusRaw = (row.status || row.Status || "").toString().trim();
+          const orderNumber = row.orderNumber || (index + 1);
+          const statusRaw = (row.status || "").toString().trim();
           const status = statusRaw ? statusRaw : "Processing";
 
-          // create row
           const tr = document.createElement("tr");
           tr.innerHTML = `
             <td class="cell-order">${orderNumber}</td>
@@ -125,7 +133,7 @@
           `;
           tbody.appendChild(tr);
 
-          // attach handlers (capture values safely)
+          // attach handlers
           const btnProcess = tr.querySelector('.btn-process');
           const btnDone = tr.querySelector('.btn-done');
 
@@ -139,33 +147,25 @@
       }
     }
 
-    // helper: send status update to GAS (includes orderNumber and row index)
     async function updateStatus({ orderNumber, index, status }) {
       try {
-        // disable UI for a short moment (optimistic)
-        // send both orderNumber and index so Apps Script can match either field
         const body = { orderNumber, rowIndex: index, status };
-
-        // POST JSON to Apps Script
         const res = await fetch(GAS_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body)
         });
 
-        // optional: check response
         if (!res.ok) {
           console.error("Failed to update status", res.status, await res.text());
         }
 
-        // refresh view
         fetchOrders();
       } catch (err) {
         console.error("Error updating status:", err);
       }
     }
 
-    // small helpers
     function formatNumber(n) { return Number.isFinite(n) ? (Math.round(n * 100) / 100) : n; }
     function escapeHtml(str) {
       if (!str) return "";
@@ -177,7 +177,6 @@
         .replace(/'/g, "&#39;");
     }
 
-    // initial load + polling
     fetchOrders();
     setInterval(fetchOrders, 5000);
   </script>
