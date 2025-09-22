@@ -79,7 +79,7 @@
     </tfoot>
   </table>
 
- <script>
+<script>
   const GAS_URL = "https://script.google.com/macros/s/AKfycbx4M9gUuzEIFmIgmlVewxi0ilPlIlR5qLsLNJ9MmJh6y-Yx7Tv4wbyfS8NQTV9Zde8a/exec";
 
   async function fetchOrders() {
@@ -135,21 +135,13 @@
     }
   }
 
+  // ✅ Now using GET request (avoids CORS issue)
   async function updateStatus(rowIndex, status) {
     try {
-      const body = {
-        action: "update",
-        rowIndex: rowIndex,
-        status: status
-      };
-
-      const res = await fetch(GAS_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-
+      const url = `${GAS_URL}?action=update&rowIndex=${rowIndex}&status=${encodeURIComponent(status)}`;
+      const res = await fetch(url); 
       const result = await res.json();
+
       if (result.status !== "success") {
         console.error("Update failed:", result.message);
       }
@@ -174,5 +166,7 @@
   fetchOrders();
   setInterval(fetchOrders, 5000);
 </script>
+
+
 </body>
 </html>
