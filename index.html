@@ -41,10 +41,17 @@
         font-size: 18px;
         margin: 5px 0;
     }
+    input[type="number"], input[type="text"] {
+        padding: 5px;
+        margin: 5px 0;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
     input[type="number"] {
         width: 60px;
-        padding: 5px;
-        margin-bottom: 10px;
+    }
+    input[type="text"] {
+        width: 200px;
     }
     button {
         background-color: #ffb6c1;
@@ -58,12 +65,21 @@
         background-color: #ff69b4;
         color: white;
     }
+    .name-input {
+        margin: 20px 0;
+    }
 </style>
 </head>
 <body>
 <h1>
   <img src="LOGO.png" alt="Sweet Dedications Logo" style="height:50px; vertical-align:middle; margin-right:10px;">
 </h1>
+
+<!-- Last Name Input -->
+<div class="name-input">
+    <label for="lastName"><strong>Enter Your Last Name:</strong></label><br>
+    <input type="text" id="lastName" placeholder="e.g. Santos">
+</div>
 
 <div class="product-container">
     <div class="product">
@@ -113,11 +129,18 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbxL2XsdMeDs6ch_kiZ1EJZW
 
 function recordSale(itemName, price, qtyId) {
     const quantity = document.getElementById(qtyId).value;
+    const lastName = document.getElementById("lastName").value.trim();
+
+    if (!lastName) {
+        alert("⚠️ Please enter your last name before ordering.");
+        return;
+    }
 
     const data = new URLSearchParams();
     data.append("itemName", itemName);
     data.append("price", price);
     data.append("quantity", quantity);
+    data.append("lastName", lastName); // add last name
 
     fetch(GAS_URL, {
         method: "POST",
@@ -129,7 +152,7 @@ function recordSale(itemName, price, qtyId) {
     .then(res => res.json())
     .then(res => {
         if (res.status === "success") {
-            alert(`✅ Sale recorded!\nItem: ${itemName}\nQuantity: ${quantity}\nTotal: PHP ${price * quantity}`);
+            alert(`✅ Sale recorded!\nName: ${lastName}\nItem: ${itemName}\nQuantity: ${quantity}\nTotal: PHP ${price * quantity}`);
         } else {
             alert("Error: " + res.message);
         }
