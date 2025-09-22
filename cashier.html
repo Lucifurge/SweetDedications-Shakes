@@ -79,100 +79,100 @@
     </tfoot>
   </table>
 
-  <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbx4M9gUuzEIFmIgmlVewxi0ilPlIlR5qLsLNJ9MmJh6y-Yx7Tv4wbyfS8NQTV9Zde8a/exec";
+ <script>
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbx4M9gUuzEIFmIgmlVewxi0ilPlIlR5qLsLNJ9MmJh6y-Yx7Tv4wbyfS8NQTV9Zde8a/exec";
 
-    async function fetchOrders() {
-      try {
-        const res = await fetch(GAS_URL);
-        const data = await res.json();
+  async function fetchOrders() {
+    try {
+      const res = await fetch(GAS_URL);
+      const data = await res.json();
 
-        const tbody = document.getElementById("orderBody");
-        tbody.innerHTML = "";
-        let grandTotal = 0;
+      const tbody = document.getElementById("orderBody");
+      tbody.innerHTML = "";
+      let grandTotal = 0;
 
-        data.forEach((row, index) => {
-          const product = row.product || "";
-          const qty = parseInt(row.quantity) || 0;
-          const prc = parseFloat(row.price) || 0;
-          const total = qty * prc;
-          grandTotal += total;
+      data.forEach((row, index) => {
+        const product = row.product || "";
+        const qty = parseInt(row.quantity) || 0;
+        const prc = parseFloat(row.price) || 0;
+        const total = qty * prc;
+        grandTotal += total;
 
-          const orderNumber = row.orderNumber || (index + 1);
-          const statusRaw = (row.status || "").toString().trim();
-          const status = statusRaw ? statusRaw : "Processing";
+        const orderNumber = row.orderNumber || (index + 1);
+        const statusRaw = (row.status || "").toString().trim();
+        const status = statusRaw ? statusRaw : "Processing";
 
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td class="cell-order">${orderNumber}</td>
-            <td class="cell-product">${escapeHtml(product)}</td>
-            <td class="cell-qty">${qty}</td>
-            <td class="cell-price">${isNaN(prc) ? "" : prc}</td>
-            <td class="cell-total">${isNaN(total) ? "" : total}</td>
-            <td class="cell-status">
-              <div class="status-badge-wrap">
-                <span class="badge ${status.toLowerCase()==='done' ? 'done' : (status.toLowerCase()==='processing' ? 'processing' : 'none')}">${status}</span>
-              </div>
-              <div class="status-actions">
-                <button class="processing btn-process">Processing</button>
-                <button class="done btn-done">Done</button>
-              </div>
-            </td>
-          `;
-          tbody.appendChild(tr);
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="cell-order">${orderNumber}</td>
+          <td class="cell-product">${escapeHtml(product)}</td>
+          <td class="cell-qty">${qty}</td>
+          <td class="cell-price">${isNaN(prc) ? "" : prc}</td>
+          <td class="cell-total">${isNaN(total) ? "" : total}</td>
+          <td class="cell-status">
+            <div class="status-badge-wrap">
+              <span class="badge ${status.toLowerCase()==='done' ? 'done' : (status.toLowerCase()==='processing' ? 'processing' : 'none')}">${status}</span>
+            </div>
+            <div class="status-actions">
+              <button class="processing btn-process">Processing</button>
+              <button class="done btn-done">Done</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
 
-          // attach handlers
-          const btnProcess = tr.querySelector('.btn-process');
-          const btnDone = tr.querySelector('.btn-done');
+        // attach handlers
+        const btnProcess = tr.querySelector('.btn-process');
+        const btnDone = tr.querySelector('.btn-done');
 
-          btnProcess.addEventListener('click', () => updateStatus(orderNumber, index, 'Processing'));
-          btnDone.addEventListener('click', () => updateStatus(orderNumber, index, 'Done'));
-        });
+        btnProcess.addEventListener('click', () => updateStatus(index + 2, 'Processing'));
+        btnDone.addEventListener('click', () => updateStatus(index + 2, 'Done'));
+      });
 
-        document.getElementById("grandTotal").textContent = formatNumber(grandTotal);
-      } catch (err) {
-        console.error("Error fetching data:", err);
+      document.getElementById("grandTotal").textContent = formatNumber(grandTotal);
+    } catch (err) {
+      console.error("Error fetching data:", err);
+    }
+  }
+
+  async function updateStatus(rowIndex, status) {
+    try {
+      const body = {
+        action: "update",
+        rowIndex: rowIndex,
+        status: status
+      };
+
+      const res = await fetch(GAS_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+
+      const result = await res.json();
+      if (result.status !== "success") {
+        console.error("Update failed:", result.message);
       }
+
+      fetchOrders(); // refresh table
+    } catch (err) {
+      console.error("Error updating status:", err);
     }
+  }
 
-    async function updateStatus(orderNumber, index, status) {
-      try {
-        const body = {
-          action: "updateStatus",
-          orderNumber: orderNumber,
-          rowIndex: index,
-          status: status
-        };
+  function formatNumber(n) { return Number.isFinite(n) ? (Math.round(n * 100) / 100) : n; }
+  function escapeHtml(str) {
+    if (!str) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
 
-        const res = await fetch(GAS_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body)
-        });
-
-        if (!res.ok) {
-          console.error("Failed to update status", res.status, await res.text());
-        }
-
-        fetchOrders();
-      } catch (err) {
-        console.error("Error updating status:", err);
-      }
-    }
-
-    function formatNumber(n) { return Number.isFinite(n) ? (Math.round(n * 100) / 100) : n; }
-    function escapeHtml(str) {
-      if (!str) return "";
-      return String(str)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
-    }
-
-    fetchOrders();
-    setInterval(fetchOrders, 5000);
-  </script>
+  fetchOrders();
+  setInterval(fetchOrders, 5000);
+</script>
 </body>
 </html>
