@@ -1,180 +1,122 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Cashier Dashboard</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cashier System</title>
   <style>
     body {
-      background: #fffafc;
       font-family: Arial, sans-serif;
-      padding: 20px;
-      color: #333;
-    }
-    h1 {
-      text-align: center;
-      color: #ff69b4;
+      margin: 20px;
+      background: #f8f8f8;
     }
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 20px;
+      background: white;
     }
     th, td {
-      padding: 10px;
       border: 1px solid #ddd;
+      padding: 8px;
       text-align: center;
     }
     th {
-      background-color: #ffd6e8;
-    }
-    tfoot td {
-      font-weight: bold;
-      background-color: #fff0f5;
+      background-color: #f4b6c2;
+      color: white;
     }
     button {
-      padding: 6px 10px;
-      margin: 2px;
+      padding: 6px 12px;
+      background: #ff85a2;
+      color: white;
       border: none;
-      border-radius: 5px;
+      border-radius: 4px;
       cursor: pointer;
     }
-    .processing { background-color: #f0ad4e; color: #fff; }
-    .done { background-color: #5cb85c; color: #fff; }
-    .badge {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 12px;
-      font-weight: bold;
-      font-size: 0.9rem;
-      margin-bottom: 6px;
+    button:hover {
+      background: #ff5c85;
     }
-    .badge.processing { background:#f0ad4e; color:#fff; }
-    .badge.done { background:#5cb85c; color:#fff; }
-    .badge.none { background:#e0e0e0; color:#333; }
-    .status-actions { margin-top:6px; }
   </style>
 </head>
 <body>
-  <h1>Cashier Orders (Live from Spreadsheet)</h1>
-
-  <table>
+  <h1>Cashier System</h1>
+  <table id="ordersTable">
     <thead>
       <tr>
-        <th>Order #</th>
-        <th>Item</th>
+        <th>Timestamp</th>
+        <th>Last Name</th>
+        <th>Product</th>
         <th>Quantity</th>
-        <th>Price (PHP)</th>
-        <th>Total (PHP)</th>
+        <th>Price</th>
+        <th>Total</th>
         <th>Status</th>
+        <th>Action</th>
       </tr>
     </thead>
-    <tbody id="orderBody"></tbody>
-    <tfoot>
-      <tr>
-        <td colspan="4">Grand Total</td>
-        <td id="grandTotal">0</td>
-        <td></td>
-      </tr>
-    </tfoot>
+    <tbody></tbody>
   </table>
 
-<script>
-  const GAS_URL = "https://script.google.com/macros/s/AKfycbx4M9gUuzEIFmIgmlVewxi0ilPlIlR5qLsLNJ9MmJh6y-Yx7Tv4wbyfS8NQTV9Zde8a/exec";
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbzD-Hna1zN7fQ8QmsT-mJZpR2DYc2uGrU6SP-r1sU3SldqDpkG4Z5VUdGbZXYiDYBQc/exec";
 
-  async function fetchOrders() {
-    try {
-      const res = await fetch(GAS_URL);
-      const data = await res.json();
+    async function fetchOrders() {
+      try {
+        const res = await fetch(API_URL, {
+          method: "GET",
+          headers: {
+            "Accept": "application/json"
+          },
+          mode: "cors"
+        });
+        const data = await res.json();
 
-      const tbody = document.getElementById("orderBody");
-      tbody.innerHTML = "";
-      let grandTotal = 0;
+        const tbody = document.querySelector("#ordersTable tbody");
+        tbody.innerHTML = "";
 
-      data.forEach((row, index) => {
-        const product = row.product || "";
-        const qty = parseInt(row.quantity) || 0;
-        const prc = parseFloat(row.price) || 0;
-        const total = qty * prc;
-        grandTotal += total;
-
-        const orderNumber = row.orderNumber || (index + 1);
-        const statusRaw = (row.status || "").toString().trim();
-        const status = statusRaw ? statusRaw : "Processing";
-
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td class="cell-order">${orderNumber}</td>
-          <td class="cell-product">${escapeHtml(product)}</td>
-          <td class="cell-qty">${qty}</td>
-          <td class="cell-price">${isNaN(prc) ? "" : prc}</td>
-          <td class="cell-total">${isNaN(total) ? "" : total}</td>
-          <td class="cell-status">
-            <div class="status-badge-wrap">
-              <span class="badge ${status.toLowerCase()==='done' ? 'done' : (status.toLowerCase()==='processing' ? 'processing' : 'none')}">${status}</span>
-            </div>
-            <div class="status-actions">
-              <button class="processing btn-process">Processing</button>
-              <button class="done btn-done">Done</button>
-            </div>
-          </td>
-        `;
-        tbody.appendChild(tr);
-
-        // attach handlers
-        const btnProcess = tr.querySelector('.btn-process');
-        const btnDone = tr.querySelector('.btn-done');
-
-        btnProcess.addEventListener('click', () => updateStatus(index + 2, 'Processing'));
-        btnDone.addEventListener('click', () => updateStatus(index + 2, 'Done'));
-      });
-
-      document.getElementById("grandTotal").textContent = formatNumber(grandTotal);
-    } catch (err) {
-      console.error("Error fetching data:", err);
-    }
-  }
-
-  // ✅ POST request with CORS headers expected
-  async function updateStatus(rowIndex, status) {
-    try {
-      const body = {
-        action: "update",
-        rowIndex: rowIndex,
-        status: status
-      };
-
-      const res = await fetch(GAS_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-        mode: "cors"
-      });
-
-      const result = await res.json();
-      if (result.status !== "success") {
-        console.error("Update failed:", result.message);
+        data.forEach(row => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${row.timestamp}</td>
+            <td>${row.lastName}</td>
+            <td>${row.product}</td>
+            <td>${row.quantity}</td>
+            <td>${row.price}</td>
+            <td>${row.total}</td>
+            <td>${row.status}</td>
+            <td><button onclick="updateStatus(${row.rowIndex}, 'Done')">Done</button></td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error("Fetch failed:", err);
       }
-
-      fetchOrders(); // refresh table
-    } catch (err) {
-      console.error("Error updating status:", err);
     }
-  }
 
-  function formatNumber(n) { return Number.isFinite(n) ? (Math.round(n * 100) / 100) : n; }
-  function escapeHtml(str) {
-    if (!str) return "";
-    return String(str)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  }
+    async function updateStatus(rowIndex, status) {
+      try {
+        const res = await fetch(`${API_URL}?action=update&rowIndex=${rowIndex}&status=${status}`, {
+          method: "GET",
+          headers: {
+            "Accept": "application/json",
+            "Access-Control-Allow-Origin": "*"
+          },
+          mode: "cors"
+        });
 
-  fetchOrders();
-  setInterval(fetchOrders, 5000);
-</script>
+        const result = await res.json();
+        if (result.status === "success") {
+          alert("Order updated successfully!");
+          fetchOrders();
+        } else {
+          alert("Update failed: " + result.message);
+        }
+      } catch (err) {
+        console.error("Update failed:", err);
+        alert("Update failed: " + err.message);
+      }
+    }
+
+    fetchOrders();
+  </script>
 </body>
 </html>
