@@ -135,13 +135,23 @@
     }
   }
 
-  // ✅ Now using GET request (avoids CORS issue)
+  // ✅ POST request with CORS headers expected
   async function updateStatus(rowIndex, status) {
     try {
-      const url = `${GAS_URL}?action=update&rowIndex=${rowIndex}&status=${encodeURIComponent(status)}`;
-      const res = await fetch(url); 
-      const result = await res.json();
+      const body = {
+        action: "update",
+        rowIndex: rowIndex,
+        status: status
+      };
 
+      const res = await fetch(GAS_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        mode: "cors"
+      });
+
+      const result = await res.json();
       if (result.status !== "success") {
         console.error("Update failed:", result.message);
       }
@@ -166,7 +176,5 @@
   fetchOrders();
   setInterval(fetchOrders, 5000);
 </script>
-
-
 </body>
 </html>
