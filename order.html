@@ -41,9 +41,17 @@
       padding: 15px;
       border-radius: 8px;
       text-align: center;
-      font-size: 1.5rem;
+      font-size: 1.3rem;
       font-weight: bold;
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      line-height: 1.5rem;
+    }
+    .order-name {
+      font-size: 1rem;
+      font-weight: normal;
+      color: #444;
+      display: block;
+      margin-top: 5px;
     }
   </style>
 </head>
@@ -58,22 +66,23 @@
   </div>
 
   <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbyyAgw1J6xRV2UWmehJhWIC_2XAib_Mpoe594evDq8zhaE_15_kb9TIhoXlj7G9IUkc/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbx4M9gUuzEIFmIgmlVewxi0ilPlIlR5qLsLNJ9MmJh6y-Yx7Tv4wbyfS8NQTV9Zde8a/exec";
 
     async function fetchOrders() {
       try {
         const res = await fetch(GAS_URL);
         const data = await res.json();
 
-        // ✅ Normalize data (same as cashier.html)
+        // ✅ Normalize data (include lastName!)
         const rows = data.map((r, index) => ({
           timestamp: r[0] || r.timestamp || "",
-          product: r[1] || r.product || "",
-          quantity: r[2] || r.quantity || 0,
-          price: r[3] || r.price || 0,
-          total: r[4] || r.total || 0,
-          orderNumber: r.orderNumber || r[5] || (index + 1),
-          status: r.status || r[6] || "Processing"
+          lastName: r[1] || r.lastName || "Guest",
+          product: r[2] || r.product || "",
+          quantity: r[3] || r.quantity || 0,
+          price: r[4] || r.price || 0,
+          total: r[5] || r.total || 0,
+          orderNumber: r.orderNumber || r[6] || (index + 1),
+          status: r.status || r[7] || "Processing"
         }));
 
         const processingList = document.getElementById("processingList");
@@ -83,9 +92,13 @@
 
         rows.forEach(row => {
           const status = (row.status || "Processing").toString().trim();
+
           const card = document.createElement("div");
           card.className = "order-card";
-          card.textContent = `#${row.orderNumber} - ${row.product} (${row.quantity})`;
+          card.innerHTML = `
+            #${row.orderNumber} - ${row.product} (${row.quantity})
+            <span class="order-name">for ${row.lastName}</span>
+          `;
 
           if (status.toLowerCase() === "processing") {
             processingList.appendChild(card);
