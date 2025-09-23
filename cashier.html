@@ -57,7 +57,7 @@
   </table>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxr7D9JPmYbagwFLa3cLfNyTCMMFvdvF0wWVEmxq0GdUhuxB2PAqld9_jxSaFCkfOo/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbxsPia4iGLp_vUEOxE4-_5-U2uKqK9Lf-tRxnjwdtgFcpJ2xYK5TiqWKq9VwB3JOeyQ/exec";
 
     async function fetchOrders() {
       try {
@@ -78,7 +78,7 @@
           tr.innerHTML = `
             <td>${row.timestamp}</td>
             <td>${row.lastName}</td>
-            <td>${row.product}</td>
+            <td>${row.itemName}</td>
             <td>${row.quantity}</td>
             <td>${row.price}</td>
             <td>${row.total}</td>
