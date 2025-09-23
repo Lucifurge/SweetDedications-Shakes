@@ -136,29 +136,33 @@ function recordSale(itemName, price, qtyId) {
         return;
     }
 
+    // Generate a unique popup ID
+    const popupId = 'ORDER-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+
+    // Show instant confirmation
+    alert(`✅ Order Confirmed!\nOrder ID: ${popupId}\nName: ${lastName}\nItem: ${itemName}\nQuantity: ${quantity}\nTotal: PHP ${price * quantity}`);
+
+    // Send the order to Google Sheets asynchronously
     const data = new URLSearchParams();
     data.append("itemName", itemName);
     data.append("price", price);
     data.append("quantity", quantity);
-    data.append("lastName", lastName); // add last name
+    data.append("lastName", lastName);
+    data.append("orderId", popupId); // optional, for tracking
 
     fetch(GAS_URL, {
         method: "POST",
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-        },
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: data.toString()
     })
     .then(res => res.json())
     .then(res => {
-        if (res.status === "success") {
-            alert(`✅ Sale recorded!\nName: ${lastName}\nItem: ${itemName}\nQuantity: ${quantity}\nTotal: PHP ${price * quantity}`);
-        } else {
-            alert("Error: " + res.message);
+        if (res.status !== "success") {
+            console.error("Error recording order:", res.message);
         }
     })
     .catch(err => {
-        alert("Request failed: " + err);
+        console.error("Request failed:", err);
     });
 }
 </script>
