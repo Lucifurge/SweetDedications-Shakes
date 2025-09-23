@@ -66,6 +66,7 @@
 
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbw60HhhIxv1TiBJiJ_t67vfaXJUo-RMMvIm9BN4yFjcwOOWBwRQNp1Fe_xfLPbOoSRg/exec";
+    const REFRESH_INTERVAL = 3000; // 3 seconds
 
     async function fetchOrders() {
       try {
@@ -78,7 +79,7 @@
         data.forEach(row => {
           const tr = document.createElement("tr");
 
-          // Check localStorage if this rowIndex was marked as done
+          // Preserve status from localStorage
           const savedStatus = localStorage.getItem("status_" + row.rowIndex);
           const isDone = savedStatus === "done";
 
@@ -104,7 +105,6 @@
       }
     }
 
-    // Toggle only on the website, but save in localStorage
     function toggleStatus(el, rowIndex) {
       if (el.classList.contains("done")) {
         el.textContent = "❌";
@@ -119,8 +119,11 @@
       }
     }
 
-    // Load orders when page opens
+    // Initial fetch
     fetchOrders();
+
+    // Auto-refresh every 3 seconds
+    setInterval(fetchOrders, REFRESH_INTERVAL);
   </script>
 </body>
 </html>
