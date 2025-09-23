@@ -78,7 +78,10 @@
         data.forEach(row => {
           const tr = document.createElement("tr");
 
-          // Start with ❌ (not done) by default
+          // Check localStorage if this rowIndex was marked as done
+          const savedStatus = localStorage.getItem("status_" + row.rowIndex);
+          const isDone = savedStatus === "done";
+
           tr.innerHTML = `
             <td>${row.timestamp}</td>
             <td>${row.lastName}</td>
@@ -87,7 +90,11 @@
             <td>${row.price}</td>
             <td>${row.total}</td>
             <td>
-              <span class="status-btn not-done" onclick="toggleStatus(this)">❌</span>
+              <span 
+                class="status-btn ${isDone ? "done" : "not-done"}" 
+                onclick="toggleStatus(this, ${row.rowIndex})">
+                ${isDone ? "✅" : "❌"}
+              </span>
             </td>
           `;
           tbody.appendChild(tr);
@@ -97,16 +104,18 @@
       }
     }
 
-    // Toggle only on the website, not in the sheet
-    function toggleStatus(el) {
+    // Toggle only on the website, but save in localStorage
+    function toggleStatus(el, rowIndex) {
       if (el.classList.contains("done")) {
         el.textContent = "❌";
         el.classList.remove("done");
         el.classList.add("not-done");
+        localStorage.setItem("status_" + rowIndex, "not-done");
       } else {
         el.textContent = "✅";
         el.classList.remove("not-done");
         el.classList.add("done");
+        localStorage.setItem("status_" + rowIndex, "done");
       }
     }
 
