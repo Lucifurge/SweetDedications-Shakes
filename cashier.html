@@ -79,7 +79,7 @@
         data.forEach(row => {
           const tr = document.createElement("tr");
 
-          // Preserve status from localStorage
+          // Default to ❌ if no localStorage entry (new order)
           const savedStatus = localStorage.getItem("status_" + row.rowIndex);
           const isDone = savedStatus === "done";
 
