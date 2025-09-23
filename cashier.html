@@ -78,11 +78,7 @@
         data.forEach(row => {
           const tr = document.createElement("tr");
 
-          // Status display only (✅ or ❌)
-          const isDone = row.status === "Done";
-          const statusIcon = isDone ? "✅" : "❌";
-          const statusClass = isDone ? "done" : "not-done";
-
+          // Start with ❌ (not done) by default
           tr.innerHTML = `
             <td>${row.timestamp}</td>
             <td>${row.lastName}</td>
@@ -91,9 +87,7 @@
             <td>${row.price}</td>
             <td>${row.total}</td>
             <td>
-              <span class="status-btn ${statusClass}" onclick="toggleStatus(this)">
-                ${statusIcon}
-              </span>
+              <span class="status-btn not-done" onclick="toggleStatus(this)">❌</span>
             </td>
           `;
           tbody.appendChild(tr);
@@ -116,6 +110,7 @@
       }
     }
 
+    // Load orders when page opens
     fetchOrders();
   </script>
 </body>
