@@ -57,7 +57,7 @@
   </table>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxsPia4iGLp_vUEOxE4-_5-U2uKqK9Lf-tRxnjwdtgFcpJ2xYK5TiqWKq9VwB3JOeyQ/exec";
+    const API_URL = "https://script.google.com/macros/library/d/13PFhCCLlDuEm32r2MeIy_4KnymRapeY7OQdBNTZw211vNcmNf1B_-ji-/12";
 
     async function fetchOrders() {
       try {
@@ -74,6 +74,14 @@
         tbody.innerHTML = "";
 
         data.forEach(row => {
+          // Show ❌ if not done, ✅ if done
+          const statusIcon = row.status === "Done" ? "✅" : "❌";
+
+          // Hide button if already done
+          const actionButton = row.status === "Done"
+            ? ""
+            : `<button onclick="updateStatus(${row.rowIndex}, 'Done')">Mark Done</button>`;
+
           const tr = document.createElement("tr");
           tr.innerHTML = `
             <td>${row.timestamp}</td>
@@ -82,8 +90,8 @@
             <td>${row.quantity}</td>
             <td>${row.price}</td>
             <td>${row.total}</td>
-            <td>${row.status}</td>
-            <td><button onclick="updateStatus(${row.rowIndex}, 'Done')">Done</button></td>
+            <td>${statusIcon}</td>
+            <td>${actionButton}</td>
           `;
           tbody.appendChild(tr);
         });
@@ -105,8 +113,7 @@
 
         const result = await res.json();
         if (result.status === "success") {
-          alert("Order updated successfully!");
-          fetchOrders();
+          fetchOrders(); // refresh table
         } else {
           alert("Update failed: " + result.message);
         }
