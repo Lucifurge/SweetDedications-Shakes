@@ -48,6 +48,12 @@
     .preorder {
       color: orange;
     }
+    #revenueTotal {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+      text-align: right;
+    }
   </style>
 </head>
 <body>
@@ -67,6 +73,8 @@
     <tbody></tbody>
   </table>
 
+  <div id="revenueTotal">Revenue Total: ₱0</div>
+
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbw60HhhIxv1TiBJiJ_t67vfaXJUo-RMMvIm9BN4yFjcwOOWBwRQNp1Fe_xfLPbOoSRg/exec";
     const REFRESH_INTERVAL = 3000; // 3 seconds
@@ -78,6 +86,7 @@
 
         const tbody = document.querySelector("#ordersTable tbody");
         tbody.innerHTML = "";
+        let totalRevenue = 0;
 
         data.forEach(row => {
           const tr = document.createElement("tr");
@@ -91,9 +100,10 @@
           if (savedStatus === "done") {
             symbol = "✅";
             cls = "done";
+            totalRevenue += parseFloat(row.total) || 0; // ✅ Only add done
           } else if (savedStatus === "preorder") {
             symbol = "🟡";
-            cls = "preorder";
+            cls = "preorder"; // 🟡 not added
           }
 
           tr.innerHTML = `
@@ -106,19 +116,24 @@
             <td>
               <span 
                 class="status-btn ${cls}" 
-                onclick="toggleStatus(this, ${row.rowIndex})">
+                onclick="toggleStatus(this, ${row.rowIndex}, ${row.total})">
                 ${symbol}
               </span>
             </td>
           `;
           tbody.appendChild(tr);
         });
+
+        // Update revenue total display
+        document.getElementById("revenueTotal").textContent = 
+          "Revenue Total: ₱" + totalRevenue.toFixed(2);
+
       } catch (err) {
         console.error("Error fetching orders:", err);
       }
     }
 
-    function toggleStatus(el, rowIndex) {
+    function toggleStatus(el, rowIndex, rowTotal) {
       if (el.classList.contains("not-done")) {
         el.textContent = "🟡";
         el.className = "status-btn preorder";
@@ -132,6 +147,7 @@
         el.className = "status-btn not-done";
         localStorage.setItem("status_" + rowIndex, "not-done");
       }
+      fetchOrders(); // Recalculate after toggle
     }
 
     // Initial fetch
