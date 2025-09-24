@@ -45,6 +45,9 @@
     .not-done {
       color: red;
     }
+    .preorder {
+      color: orange;
+    }
   </style>
 </head>
 <body>
@@ -80,8 +83,18 @@
           const tr = document.createElement("tr");
 
           // Default to ❌ if no localStorage entry (new order)
-          const savedStatus = localStorage.getItem("status_" + row.rowIndex);
-          const isDone = savedStatus === "done";
+          const savedStatus = localStorage.getItem("status_" + row.rowIndex) || "not-done";
+
+          let symbol = "❌";
+          let cls = "not-done";
+
+          if (savedStatus === "done") {
+            symbol = "✅";
+            cls = "done";
+          } else if (savedStatus === "preorder") {
+            symbol = "🟡";
+            cls = "preorder";
+          }
 
           tr.innerHTML = `
             <td>${row.timestamp}</td>
@@ -92,9 +105,9 @@
             <td>${row.total}</td>
             <td>
               <span 
-                class="status-btn ${isDone ? "done" : "not-done"}" 
+                class="status-btn ${cls}" 
                 onclick="toggleStatus(this, ${row.rowIndex})">
-                ${isDone ? "✅" : "❌"}
+                ${symbol}
               </span>
             </td>
           `;
@@ -106,16 +119,18 @@
     }
 
     function toggleStatus(el, rowIndex) {
-      if (el.classList.contains("done")) {
-        el.textContent = "❌";
-        el.classList.remove("done");
-        el.classList.add("not-done");
-        localStorage.setItem("status_" + rowIndex, "not-done");
-      } else {
+      if (el.classList.contains("not-done")) {
+        el.textContent = "🟡";
+        el.className = "status-btn preorder";
+        localStorage.setItem("status_" + rowIndex, "preorder");
+      } else if (el.classList.contains("preorder")) {
         el.textContent = "✅";
-        el.classList.remove("not-done");
-        el.classList.add("done");
+        el.className = "status-btn done";
         localStorage.setItem("status_" + rowIndex, "done");
+      } else {
+        el.textContent = "❌";
+        el.className = "status-btn not-done";
+        localStorage.setItem("status_" + rowIndex, "not-done");
       }
     }
 
