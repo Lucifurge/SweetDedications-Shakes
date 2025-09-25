@@ -75,93 +75,91 @@
 
   <div id="revenueTotal">Revenue Total: ₱0</div>
 
-  <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbw60HhhIxv1TiBJiJ_t67vfaXJUo-RMMvIm9BN4yFjcwOOWBwRQNp1Fe_xfLPbOoSRg/exec";
-    const REFRESH_INTERVAL = 3000; // 3 seconds
+ <script>
+  const API_URL = "https://script.google.com/macros/s/AKfycbw60HhhIxv1TiBJiJ_t67vfaXJUo-RMMvIm9BN4yFjcwOOWBwRQNp1Fe_xfLPbOoSRg/exec";
+  const REFRESH_INTERVAL = 3000; // 3 seconds
 
-    async function fetchOrders() {
-      try {
-        const res = await fetch(API_URL);
-        const data = await res.json();
+  async function fetchOrders() {
+    try {
+      const res = await fetch(API_URL);
+      const data = await res.json();
 
-        const tbody = document.querySelector("#ordersTable tbody");
-        tbody.innerHTML = "";
-        let totalRevenue = 0;
+      const tbody = document.querySelector("#ordersTable tbody");
+      tbody.innerHTML = "";
+      let totalRevenue = 0;
 
-        data.forEach(row => {
-          const tr = document.createElement("tr");
+      data.forEach(row => {
+        const tr = document.createElement("tr");
 
-          // 🔑 Use unique key per order (not just rowIndex)
-          const orderKey = row.timestamp + "_" + row.lastName + "_" + row.product;
+        // ✅ Force new orders to always be ❌ first
+        let savedStatus = localStorage.getItem("status_" + row.rowIndex);
+        if (!savedStatus) {
+          savedStatus = "not-done";
+          localStorage.setItem("status_" + row.rowIndex, "not-done");
+        }
 
-          // Default to ❌ if new order
-          let savedStatus = localStorage.getItem("status_" + orderKey);
-          if (!savedStatus) {
-            savedStatus = "not-done";
-            localStorage.setItem("status_" + orderKey, "not-done");
-          }
+        let symbol = "❌";
+        let cls = "not-done";
 
-          let symbol = "❌";
-          let cls = "not-done";
+        if (savedStatus === "done") {
+          symbol = "✅";
+          cls = "done";
+          totalRevenue += parseFloat(row.total) || 0; // ✅ Only add done
+        } else if (savedStatus === "preorder") {
+          symbol = "🟡";
+          cls = "preorder"; // 🟡 not added
+        }
 
-          if (savedStatus === "done") {
-            symbol = "✅";
-            cls = "done";
-            totalRevenue += parseFloat(row.total) || 0;
-          } else if (savedStatus === "preorder") {
-            symbol = "🟡";
-            cls = "preorder";
-          }
+        tr.innerHTML = `
+          <td>${row.timestamp}</td>
+          <td>${row.lastName}</td>
+          <td>${row.product}</td>
+          <td>${row.quantity}</td>
+          <td>${row.price}</td>
+          <td>${row.total}</td>
+          <td>
+            <span 
+              class="status-btn ${cls}" 
+              onclick="toggleStatus(this, ${row.rowIndex})">
+              ${symbol}
+            </span>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
 
-          tr.innerHTML = `
-            <td>${row.timestamp}</td>
-            <td>${row.lastName}</td>
-            <td>${row.product}</td>
-            <td>${row.quantity}</td>
-            <td>${row.price}</td>
-            <td>${row.total}</td>
-            <td>
-              <span 
-                class="status-btn ${cls}" 
-                onclick="toggleStatus(this, '${orderKey}', ${row.total})">
-                ${symbol}
-              </span>
-            </td>
-          `;
-          tbody.appendChild(tr);
-        });
+      // Update revenue total display
+      document.getElementById("revenueTotal").textContent =
+        "Revenue Total: ₱" + totalRevenue.toFixed(2);
 
-        // Update revenue total display
-        document.getElementById("revenueTotal").textContent =
-          "Revenue Total: ₱" + totalRevenue.toFixed(2);
-
-      } catch (err) {
-        console.error("Error fetching orders:", err);
-      }
+    } catch (err) {
+      console.error("Error fetching orders:", err);
     }
+  }
 
-    function toggleStatus(el, orderKey, total) {
-      if (el.classList.contains("not-done")) {
-        el.textContent = "🟡";
-        el.className = "status-btn preorder";
-        localStorage.setItem("status_" + orderKey, "preorder");
-      } else if (el.classList.contains("preorder")) {
-        el.textContent = "✅";
-        el.className = "status-btn done";
-        localStorage.setItem("status_" + orderKey, "done");
-      } else {
-        el.textContent = "❌";
-        el.className = "status-btn not-done";
-        localStorage.setItem("status_" + orderKey, "not-done");
-      }
-      fetchOrders(); // Recalculate totals after toggle
+  function toggleStatus(el, rowIndex) {
+    if (el.classList.contains("not-done")) {
+      el.textContent = "🟡";
+      el.className = "status-btn preorder";
+      localStorage.setItem("status_" + rowIndex, "preorder");
+    } else if (el.classList.contains("preorder")) {
+      el.textContent = "✅";
+      el.className = "status-btn done";
+      localStorage.setItem("status_" + rowIndex, "done");
+    } else {
+      el.textContent = "❌";
+      el.className = "status-btn not-done";
+      localStorage.setItem("status_" + rowIndex, "not-done");
     }
+    fetchOrders(); // Recalculate after toggle
+  }
 
-    // Initial fetch
-    fetchOrders();
+  // Initial fetch
+  fetchOrders();
 
-    // Auto-refresh every 3 seconds
-    setInterval(fetchOrders, REFRESH_INTERVAL);
-  </script>
+  // Auto-refresh every 3 seconds
+  setInterval(fetchOrders, REFRESH_INTERVAL);
+</script>
+
 </body>
 </html>
